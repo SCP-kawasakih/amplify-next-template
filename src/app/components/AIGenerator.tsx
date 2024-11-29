@@ -33,21 +33,14 @@ export default function AIGenerator() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // バックエンドにデータを送信してAI生成結果を取得
-        const response = await fetch("/api/generate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ input }),
-        });
-        const data = await response.json();
-        setResult(data.result);
+        const response = `（${input}に対する返事）`;
+        setResult(response);
 
-        const newEntry: Entry = { prompt: input, result: data.result };
+        const newEntry: Entry = { prompt: input, result: response };
         setHistory([...history, newEntry]);
         await client.models.GenerationHistory.create({
             prompt: input,
-            result: data.result,
+            result: response,
         });
     };
 
