@@ -1,0 +1,6 @@
+type GenerationHistory @model @auth(rules: [{allow: public, provider: apiKey}])
+{
+  prompt: String!
+  result: String!
+  userId: String
+}
