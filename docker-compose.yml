@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  amplify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ~/.aws/:/root/.aws/
+    environment: # 環境変数
+      - HOST=0.0.0.0 # localhost接続をする際に必要
+      - CHOKIDAR_USEPOLLING=true # ホットリロードを可能にする
+    ports:
+      - '3000:3000'
+    tty: true
