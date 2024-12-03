@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
 /* @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -17,13 +11,14 @@
 } */
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: rgb(48, 48, 48);
   background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+    to bottom,
+    white,
+    rgb(255, 200, 218) /* より薄いピンク */
+      /* または rgb(255, 192, 203) でより濃いピンク */
+  );
+  min-height: 100vh; /* 画面全体にグラデーションを適用 */
 }
 
 @layer utilities {
