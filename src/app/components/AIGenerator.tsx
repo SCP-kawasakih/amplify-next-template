@@ -24,8 +24,13 @@ export default function AIGenerator({ user }: AIGeneratorProps) {
   const [history, setHistory] = useState<Entry[]>([]);
 
   const fetchTodos = async () => {
-    const { data: items, errors } =
-      await client.models.GenerationHistory.list();
+    const { data: items, errors } = await client.models.GenerationHistory.list({
+      filter: {
+        userId: {
+          eq: user?.userId,
+        },
+      },
+    });
     const mappedItems = items.map((item) => ({
       prompt: item.prompt,
       result: item.result,
@@ -48,6 +53,7 @@ export default function AIGenerator({ user }: AIGeneratorProps) {
     await client.models.GenerationHistory.create({
       prompt: input,
       result: response,
+      userId: user?.userId,
     });
   };
 
@@ -58,7 +64,7 @@ export default function AIGenerator({ user }: AIGeneratorProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="input" className="block mb-2">
-              なんでも言うてみ：
+              なんでも言うてみ
             </label>
             <textarea
               id="input"
