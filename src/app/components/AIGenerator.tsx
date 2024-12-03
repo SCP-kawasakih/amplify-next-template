@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { Schema } from "../../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
+import { AuthUser } from "aws-amplify/auth";
 
 // エントリの型を定義
 type Entry = {
@@ -10,12 +11,18 @@ type Entry = {
     result: string;
 };
 
+// AIGeneratorコンポーネントのプロパティ型を定義
+interface AIGeneratorProps {
+    user: AuthUser | undefined;
+}
+
 const client = generateClient<Schema>();
 
-export default function AIGenerator() {
+export default function AIGenerator({ user }: AIGeneratorProps) {
     const [input, setInput] = useState("");
     const [result, setResult] = useState("");
     const [history, setHistory] = useState<Entry[]>([]);
+
     const fetchTodos = async () => {
         const { data: items, errors } =
             await client.models.GenerationHistory.list();
@@ -81,8 +88,8 @@ export default function AIGenerator() {
                             key={index}
                             className="border-b border-gray-300 py-2"
                         >
-                            <strong>私の悩み:</strong> {entry.prompt} <br />
-                            <strong>彼の答え:</strong> {entry.result}
+                            <strong>私</strong> 「{entry.prompt}」 <br />
+                            <strong>彼</strong> 「{entry.result}」
                         </li>
                     ))}
                 </ul>
