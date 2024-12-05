@@ -4,6 +4,19 @@ import { useState, useEffect } from "react";
 import type { Schema } from "../../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { AuthUser } from "aws-amplify/auth";
+import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
+import { fetchAuthSession } from "aws-amplify/auth";
+
+import outputs from "../../../amplify_outputs.json";
+
+const initializeLambdaClient = async () => {
+  const { credentials } = await fetchAuthSession();
+  return {
+    credentials,
+    awsRegion: outputs.auth.aws_region,
+    functionName: outputs.custom.invokeBedrockFunctionName
+  };
+};
 
 // エントリの型を定義
 type Entry = {
@@ -19,6 +32,8 @@ interface AIGeneratorProps {
 const client = generateClient<Schema>();
 
 export default function AIGenerator({ user }: AIGeneratorProps) {
+  const [lambdaConfig, setLambdaConfig] = useState<any>(null);
+
   const [input, setInput] = useState("");
   const [result, setResult] = useState("");
   const [history, setHistory] = useState<Entry[]>([]);
@@ -40,21 +55,46 @@ export default function AIGenerator({ user }: AIGeneratorProps) {
 
   useEffect(() => {
     fetchTodos();
+    initializeLambdaClient().then(config => {
+      setLambdaConfig(config);
+    });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log("input", input)
     e.preventDefault();
     // バックエンドにデータを送信してAI生成結果を取得
-    const response = `（${input}に対する返事）`;
-    setResult(response);
-
-    const newEntry: Entry = { prompt: input, result: response };
-    setHistory([...history, newEntry]);
-    await client.models.GenerationHistory.create({
-      prompt: input,
-      result: response,
-      userId: user?.userId,
+    const lambda = new LambdaClient({
+      credentials: lambdaConfig.credentials,
+      region: lambdaConfig.awsRegion,
     });
+    const command = new InvokeCommand({
+      FunctionName: lambdaConfig.functionName,
+      Payload: JSON.stringify({ prompt: input }),
+      InvocationType: 'RequestResponse',
+    });
+    const response = await lambda.send(command);
+    // PayloadをTextDecoderで適切にデコード
+    if (response.Payload) {
+      const res = new TextDecoder().decode(response.Payload);
+      console.log("result", res)
+      let result = ""
+      if (res.match(/[。？]$/)) {
+        result = res
+      } else {
+        result = "あーそれは" + res + "が悪いわ俺ならそんな思いさせへんのにまた今度飲み行こやいやお前は妹みたいなもんやし手出すわけないやん守ってあげたいし後輩にそんなことするわけないやんじゃ、挿れるで......"
+      }
+      // 保存処理
+      await client.models.GenerationHistory.create({
+        prompt: input,
+        result: result,
+        userId: user?.userId,
+      });
+      setResult(result)
+
+      // 履歴を更新
+      setHistory(prev => [...prev, { prompt: input, result: result }]);
+    }
   };
 
   return (
@@ -87,7 +127,7 @@ export default function AIGenerator({ user }: AIGeneratorProps) {
         <div className="border border-gray-300 rounded p-4 min-h-[200px]">
           {result || ""}
         </div>
-        <h3 className="text-lg font-bold mt-4">思い出</h3>
+        {/* <h3 className="text-lg font-bold mt-4">思い出</h3>
         <ul>
           {history.map((entry, index) => (
             <li key={index} className="border-b border-gray-300 py-2">
@@ -95,7 +135,7 @@ export default function AIGenerator({ user }: AIGeneratorProps) {
               <strong>彼</strong> 「{entry.result}」
             </li>
           ))}
-        </ul>
+        </ul> */}
       </div>
     </div>
   );
